@@ -1,7 +1,6 @@
 import { dir_exists, file_chmod, symlink_create } from "std/fs"
 import { file_download } from "std/http"
 import { is_root } from "std/env"
-import { text_contains } from "std/text"
 
 if !is_root() {
     throw "This script requires root permissions!"

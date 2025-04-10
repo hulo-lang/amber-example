@@ -1,6 +1,3 @@
-import { split, text_contains } from "std/text"
-import { file_write, file_append, dir_exists, file_exists, dir_create } from "std/fs"
-
 let path = "/tmp/amber-sc-tests"
 
 if ! Dir(path).exist() {

@@ -3,26 +3,26 @@ import { file_write, file_append, dir_exists, file_exists, dir_create } from "st
 
 let path = "/tmp/amber-sc-tests"
 
-if (not dir_exists(path)) {
-    dir_create(path)
+if ! Dir(path).exist() {
+    mkdir $path
 }
 
-let report = "{path}/report.txt"
-trust file_write(report, "Report for Shellcheck")
+let report = f"$path/report.txt"
+"Report for Shellcheck" >> $report
 let output = ""
 
-let stdtests = trust $ /usr/bin/ls "src/tests/stdlib/" $
-let stdlib = split(stdtests, "\n")
+let stdtests = $(& c"/usr/bin/ls" "src/tests/stdlib/")
+let stdlib = $stdtests.split("\n")
 
-for v in stdlib {
-    if not text_contains(v, ".txt") and file_exists("src/tests/stdlib/{v}") {
-        echo "Generating Bash script for test {v}"
-        trust $ ./target/debug/amber "src/tests/stdlib/{v}" "{path}/{v}.sh" $
-        output = trust $ shellcheck "{path}/{v}.sh" $
-
-        if (status != 0) {
+loop $v in $stdlib {
+    if !$v.contains(".txt") && f"src/tests/stdlib/$v".exist() {
+        echo "Generating Bash script for test $v"
+        & c"./target/debug/amber" "src/tests/stdlib/$v" "$path/$v.sh"
+        try {
+            $output = $(shellcheck "$path/$v.sh")
+        } catch {
             echo "Shellcheck found something!"
-            trust file_append(report, output)
+            $output >> $report
         }
     }
 }

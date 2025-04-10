@@ -2,8 +2,6 @@
 // Usage: ./bot-detector.sh <LOG_FILE_PATH>
 // The script is triggered by a cronjob every 10 minutes.
 
-import * from "std/text"
-
 fn main (args: any[]) {
     if $args.length() < 1 {
         throw """Path to log file missing.

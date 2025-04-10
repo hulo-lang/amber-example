@@ -3,43 +3,38 @@ import { file_download } from "std/http"
 import { is_root } from "std/env"
 import { text_contains } from "std/text"
 
-if not is_root() {
-    echo "This script requires root permissions!"
-    exit 1
+if !is_root() {
+    throw "This script requires root permissions!"
 }
 
-fun get_download_path(repo, position) {
-    return trust $ curl -sL "https://api.github.com/repos/{repo}/releases" | jq -r ".[0].assets.[{position}].browser_download_url" $
+fn get_download_path(repo: str, position: num) -> str {
+    return $(curl -sL "https://api.github.com/repos/$repo/releases" | jq -r ".[0].assets.[$position].browser_download_url")
 }
 
-fun move_to_bin(download_url, binary) {
+fn move_to_bin(download_url: str, binary: str) {
     if silent file_download(download_url, binary) {
         mv binary "/usr/local/bin" failed {
-            echo "Move {binary} to /usr/local/bin failed!"
+            echo "Move $binary to /usr/local/bin failed!"
             exit 1
         }
-        file_chmod("/usr/local/bin/{binary}", "+x")
+        file_chmod("/usr/local/bin/$binary", "+x")
     } else {
-        echo "Download for {binary} at {download_url} failed"
-        exit 1
+        throw "Download for $binary at $download_url failed"
     }
 }
 
-fun download_to_bin(download_url, binary, packed_file) {
-    if silent file_download(download_url, packed_file) {
-        trust {
-            if text_contains("tar.gz", packed_file) {
-                $ tar -zxvf "./{packed_file}" -C ./ > /dev/null 2>&1 $
-                trust mv "./{binary}" "/usr/local/bin"
-            } else {
-                $ gunzip -c - > "/usr/local/bin/{binary}" $
-            }
-            $ rm "./{packed_file}" $
+fn download_to_bin(download_url: str, binary: str, packed_file: str) {
+    if file_download(download_url, packed_file) {
+        if "tar.gz".contains(packed_file) {
+            tar -zxvf "./$packed_file" -C ./ > null $stderr>$stdout
+            mv "./$binary" "/usr/local/bin"
+        } else {
+            gunzip -c - > "/usr/local/bin/$binary"
         }
-        file_chmod("/usr/local/bin/{binary}", "+x")
+        rm "./$packed_file"
+        file_chmod("/usr/local/bin/$binary", "+x")
     } else {
-        echo "Download for {binary} at {download_url} failed"
-        exit 1
+        throw "Download for $binary at $download_url failed"
     }
 }
 
@@ -52,16 +47,16 @@ echo "Install Rust LSP"
 download_to_bin("https://github.com/rust-lang/rust-analyzer/releases/latest/download/rust-analyzer-x86_64-unknown-linux-gnu.gz", "rust-analyzer", "rust-analyzer-x86_64-unknown-linux-gnu.gz")
 
 echo "Install Lua LSP"
-if not dir_exists("/opt/lua-language-server") {
+if ! dir_exists("/opt/lua-language-server") {
     cd "/opt/"
-    trust $ git clone https://github.com/LuaLS/lua-language-server $
+    git clone "https://github.com/LuaLS/lua-language-server"
 } else {
     cd "/opt/lua-language-server"
 }
 silent trust {
     cd "lua-language-server"
-    $ git pull $
-    $ ./make.sh $
+    git pull
+    & c"./make.sh"
 }
 symlink_create("/opt/lua-language-server/bin/lua-language-server", "/usr/local/bin/lua-language-server")
 
@@ -69,9 +64,11 @@ cd "/tmp"
 
 let npm_lsp = ["vscode-langservers-extracted", "@tailwindcss/language-server", "@olrtg/emmet-language-server", "intelephense", "bash-language-server"]
 let npm_lsp_name = ["CSS, HTML, JSON LSP", "Tailwind LSP", "Emmet LSP", "Intelephense LSP", "Bash LSP"]
-for index, lsp in npm_lsp {
-    echo "Install {npm_lsp_name[index]}"
-    $ npm i -g "{lsp}" $ failed {
-        echo "Error! Exit code: {status}"
+loop (index: num, lsp: str) in npm_lsp {
+    echo "Install ${npm_lsp_name[$index]}"
+    try {
+        npm i -g $lsp
+    } catch (err: Error) {
+        echo "Error! Exit code: ${err.code}"
     }
 }

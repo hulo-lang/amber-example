@@ -13,9 +13,10 @@ fn get_download_path(repo: str, position: num) -> str {
 
 fn move_to_bin(download_url: str, binary: str) {
     if silent file_download(download_url, binary) {
-        mv binary "/usr/local/bin" failed {
-            echo "Move $binary to /usr/local/bin failed!"
-            exit 1
+        try {
+            mv binary "/usr/local/bin"
+        } catch {
+            throw "Move $binary to /usr/local/bin failed!"
         }
         file_chmod("/usr/local/bin/$binary", "+x")
     } else {

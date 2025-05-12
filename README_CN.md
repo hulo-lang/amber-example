@@ -7,7 +7,7 @@
 
 ---
 
-[English](../README.md) | 简体中文
+[English](README.md) | 简体中文
 
 > 本项目是一个实验性仓库，旨在使用 [Hulo](https://github.com/hulo-lang) 语言重写 [Amber](https://github.com/amber-lang/amber) 中的示例。  
 > 通过将命令式脚本转换为声明式 Hulo 代码，本项目探索脚本语言的现代化表达方式与可维护性。
